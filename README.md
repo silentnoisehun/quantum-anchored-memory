@@ -66,23 +66,24 @@ cargo build --release
 
 ## 📊 Benchmark Eredmények (valós IBM Quantum hardware)
 
-### Javított SYnc (H·X·H = Z → RZ) — ibm_kingston (156 qubit, opt_level=3)
-| Mérés | Qubit | Success Rate | Entropy | Job ID | Idő |
-|-------|-------|-------------|---------|--------|-----|
-| SYnc (optimized) | 1 | **99.80%** | ~0.01 | `db7tthor1c5c738la3ig` | valós QPU |
-| Koherencia | 5 | 0.0% | — | quantum counts | — |
-| Memory D9 | 5 | 2.83% | 4.880 | `db7r3j2raffc73fb4dkg` | 28.9s |
-| Wave-Quantum | 5 | — | — | Pearson=0.9973 | — |
+### Optimalizált SYnc (H·X·H → RZ, opt_level=3) — ibm_kingston (156 qubit)
+| Mérés | Qubit | Success Rate | Counts (|0...0⟩) | Job ID |
+|-------|-------|-------------|---------------|--------|
+| SYnc | 1 | **99.80%** | 1022/1024 | `db7tthor1c5c738la3ig` |
+| SYnc | 5 | **98.93%** | 1013/1024 | `db7ufs6il99s73fotfcg` |
+| SYnc | 10 | **98.34%** | 1007/1024 | `db7ugt0r1c5c738lb9a0` |
+| Koherencia | 5 | 0.0% | — | quantum counts |
+| Memory D9 | 5 | 2.83% | — | `db7r3j2raffc73fb4dkg` |
+| Wave-Quantum | 5 | — | — | Pearson=0.9973 |
 
-### Korábbi eredmények (optimalizáció előtt)
-| Mérés | Qubit | Success Rate | Job ID |
-|-------|-------|-------------|--------|
-| SYnc (H·X·H, 3 gate) | 1 | 61.62% | `db7talor1c5c738l9020` |
-| SYnc (H·H·H hibás) | 1 | 33.1% | `db7r5duil99s73fon78g` |
-| SYnc (H·H·H hibás) | 5 | 1.37% | `db7r6k8r1c5c738l5120` |
-| SYnc (H·H·H hibás) | 10 | 0.0% | `db7r7q0r1c5c738l53g0` |
+### Javulási folyamat
+| Fázis | Körülmány | Gate-k | Success | Job ID |
+|-------|----------|--------|---------|--------|
+| ❌ Hibás | H·H·H = H | 3×H | 33.1% | `db7r5duil99s73fon78g` |
+| ✅ Fix | H·X·H = Z | 3 (H,X,H) | 61.62% | `db7talor1c5c738l9020` |
+| ✅ Optimalizált | H·X·H → RZ | **1×RZ** | **99.80%** | `db7tthor1c5c738la3ig` |
 
-**Javulás:** `33.1% → 61.62% → **99.80%**` (transpiler optimalizációval). 1022/1024 mérés |0⟩. ibm_heron nem elérhető a fiókban, de ibm_kingston `opt_level=3`-mal eléri a 99.80%-t.
+**A kulcs:** H·X·H = Z → transpiler `opt_level=3`-mal RZ-redukál → 1 virtuális kapu, 0% hiba. A maradék 0.2% readout hiba (5 qubit: 1.1%, 10 qubit: 1.7% — halmozódó mérés hiba). ibm_heron nem elérhető a fiókban, de ibm_kingston `opt_level=3`-mal eléri a 99.80%-t.
 
 ## 🔐 IBM Quantum API Kulcs
 [IBM Quantum](https://quantum-computing.ibm.com/) → `export IBM_QUANTUM_TOKEN=YOUR_TOKEN`

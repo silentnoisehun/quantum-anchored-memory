@@ -1,0 +1,46 @@
+{
+  "5qubit": {
+    "job_id": "db7ufs6il99s73fotfcg",
+    "qubits": 5,
+    "shots": 1024,
+    "backend": "ibm_kingston",
+    "circuit": "H\u00b7X\u00b7H = Z \u2192 RZ (opt_level=3)",
+    "transpiled_gates": {
+      "rz": 5,
+      "measure": 5,
+      "barrier": 1
+    },
+    "success_rate": 0.9892578125,
+    "counts": {
+      "00000": 1013,
+      "00001": 4,
+      "00010": 1,
+      "00100": 2,
+      "01000": 4
+    },
+    "result_type": "quantum"
+  },
+  "10qubit": {
+    "job_id": "db7ugt0r1c5c738lb9a0",
+    "qubits": 10,
+    "shots": 1024,
+    "backend": "ibm_kingston",
+    "circuit": "H\u00b7X\u00b7H = Z \u2192 RZ (opt_level=3)",
+    "transpiled_gates": {
+      "rz": 10,
+      "measure": 10,
+      "barrier": 1
+    },
+    "success_rate": 0.9833984375,
+    "counts": {
+      "0000000000": 1007,
+      "0100000000": 5,
+      "0000000010": 1,
+      "0000000001": 5,
+      "0000100000": 1,
+      "0010000000": 1,
+      "0001000000": 4
+    },
+    "result_type": "quantum"
+  }
+}
