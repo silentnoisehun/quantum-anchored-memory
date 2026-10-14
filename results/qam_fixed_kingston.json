@@ -1,0 +1,10 @@
+{
+  "qubits": 1,
+  "shots": 1024,
+  "time_us": 324867201.089859,
+  "success_rate": 0.6162109375,
+  "entropy": 0.9606742173616986,
+  "job_id": "db7talor1c5c738l9020",
+  "backend": "ibm_kingston",
+  "result_type": "quantum"
+}

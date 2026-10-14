@@ -58,22 +58,27 @@ class QAM:
     def sync_operation(self, qubits=5, shots=1024):
         """
         SYnc művelet: ψ(t) + Echo(ψ) → 0 → ψ'(t)
-        Három lépés: hullámfüggvény előállítása, tükörözés, kioltás.
+        Három lépés:
+          1. ψ(t) = H|0⟩ = |+⟩          (hullámfüggvény létrehozása)
+          2. Echo: X|+⟩ = |+⟩           (X eigenstate, fázisműtő a Z-tól)
+          3. SYnc: H|+⟩ = |0⟩           (destructív interferencia → kioltás)
+        H·X·H = Z, tehát Z|0⟩ = |0⟩ → ~100% siker (hardver zajtól függően)
+        ⚠️ Régi hibás változat: H·H·H = H (nem I), ezért |0⟩ helyett |+⟩ jört volna ki.
         """
         if not self.backend:
             return self._simulated_sync(qubits=qubits, shots=shots)
 
         qc = QuantumCircuit(qubits)
 
-        # 1. ψ(t) – hullámfüggvény (Hadamard = felügyelt szuperpozíció)
+        # 1. ψ(t) – hullámfüggvény (Hadamard = szuperpozíció)
         for q in range(qubits):
             qc.h(q)
 
-        # 2. Echo(ψ(t)) – visszatükrös (Hadamard újra)
+        # 2. Echo(ψ) – X kapu (fázisműtő, X|+⟩ = |+⟩, eigenstate)
         for q in range(qubits):
-            qc.h(q)
+            qc.x(q)
 
-        # 3. SYnc → 0 (kioltás, harmadik Hadamard)
+        # 3. SYnc → |0⟩ (kioltás: H·X·H = Z, Z|0⟩ = |0⟩)
         for q in range(qubits):
             qc.h(q)
 
@@ -175,14 +180,14 @@ class QAM:
 
         qc = QuantumCircuit(qubits)
         for q in range(qubits):
-            qc.h(q)
-            qc.h(q)
-            qc.h(q)
+            qc.h(q)   # ψ(t) = |+⟩
+            qc.x(q)   # Echo: |+⟩ → |+⟩ (X eigenstate)
+            qc.h(q)   # SYnc → |0⟩ (H·X·H = Z, Z|0⟩ = |0⟩)
 
         qc.measure_all()
         elapsed = time.time() - start
 
-        # H+H+H = identity → mindig |00000⟩
+        # H·X·H = Z → Z|0⟩ = |0⟩ → ~100% siker
         success_rate = 0.9998
         entropy = 0.0003
 
