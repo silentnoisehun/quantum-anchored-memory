@@ -1,0 +1,24 @@
+{
+  "sync_job_id": "db7uus8r1c5c738lc8i0",
+  "control_job_id": "db7uusur6oqs7388co40",
+  "angles": {
+    "theta": 2.353304971691044,
+    "phi": 5.9735141613602165,
+    "lam": 4.599253580133889
+  },
+  "backend": "ibm_kingston",
+  "circuit": "U|0\u27e9 \u2192 U\u2020 \u2192 |0\u27e9 (opt_level=0)",
+  "submitted_at": "2026-10-14T23:09:05",
+  "sync_transpiled_gates": {
+    "rz": 6,
+    "sx": 4,
+    "barrier": 3,
+    "measure": 1
+  },
+  "control_transpiled_gates": {
+    "rz": 3,
+    "sx": 2,
+    "barrier": 2,
+    "measure": 1
+  }
+}
