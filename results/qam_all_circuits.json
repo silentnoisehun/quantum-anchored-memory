@@ -1,0 +1,145 @@
+{
+  "sync_1qubit_hxh_optimized": {
+    "job_id": "db7tthor1c5c738la3ig",
+    "qubits": 1,
+    "opt_level": 3,
+    "physical_qubits": [
+      null
+    ],
+    "gate_counts": {
+      "rz": 1,
+      "barrier": 1,
+      "measure": 1
+    },
+    "depth": 2,
+    "transpiled_qasm": "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[156];\ncreg meas[1];\nrz(-pi) q[91];\nbarrier q[91];\nmeasure q[91] -> meas[0];",
+    "physical_qubits_old": [
+      91,
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "sync_5qubit_hxh_optimized": {
+    "job_id": "db7ufs6il99s73fotfcg",
+    "qubits": 5,
+    "opt_level": 3,
+    "physical_qubits": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "gate_counts": {
+      "rz": 5,
+      "measure": 5,
+      "barrier": 1
+    },
+    "depth": 2,
+    "transpiled_qasm": "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[156];\ncreg meas[5];\nrz(-pi) q[44];\nrz(-pi) q[59];\nrz(-pi) q[118];\nrz(-pi) q[148];\nrz(-pi) q[149];\nbarrier q[59],q[149],q[44],q[118],q[148];\nmeasure q[59] -> meas[0];\nmeasure q[149] -> meas[1];\nmeasure q[44] -> meas[2];\nmeasure q[118] -> meas[3];\nmeasure q[148] -> meas[4];",
+    "physical_qubits_old": [
+      59,
+      149,
+      44,
+      118,
+      148,
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "sync_10qubit_hxh_optimized": {
+    "job_id": "db7ugt0r1c5c738lb9a0",
+    "qubits": 10,
+    "opt_level": 3,
+    "physical_qubits": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "gate_counts": {
+      "rz": 10,
+      "measure": 10,
+      "barrier": 1
+    },
+    "depth": 2,
+    "transpiled_qasm": "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[156];\ncreg meas[10];\nrz(-pi) q[10];\nrz(-pi) q[11];\nrz(-pi) q[44];\nrz(-pi) q[47];\nrz(-pi) q[59];\nrz(-pi) q[117];\nrz(-pi) q[118];\nrz(-pi) q[128];\nrz(-pi) q[148];\nrz(-pi) q[149];\nbarrier q[128],q[117],q[11],q[47],q[10],q[59],q[149],q[44],q[118],q[148];\nmeasure q[128] -> meas[0];\nmeasure q[117] -> meas[1];\nmeasure q[11] -> meas[2];\nmeasure q[47] -> meas[3];\nmeasure q[10] -> meas[4];\nmeasure q[59] -> meas[5];\nmeasure q[149] -> meas[6];\nmeasure q[44] -> meas[7];\nmeasure q[118] -> meas[8];\nmeasure q[148] -> meas[9];",
+    "physical_qubits_old": [
+      128,
+      117,
+      11,
+      47,
+      10,
+      59,
+      149,
+      44,
+      118,
+      148,
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "loschmidt_sync_1qubit": {
+    "job_id": "db7uus8r1c5c738lc8i0",
+    "qubits": 1,
+    "opt_level": 0,
+    "physical_qubits": [
+      null
+    ],
+    "gate_counts": {
+      "rz": 6,
+      "sx": 4,
+      "barrier": 3,
+      "measure": 1
+    },
+    "depth": 11,
+    "transpiled_qasm": "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[156];\ncreg meas[1];\nrz(4.599253580133889) q[0];\nsx q[0];\nrz(5.494897625280837) q[0];\nsx q[0];\nrz(15.398292122129597) q[0];\nbarrier q[0];\nrz(-5.9735141613602165) q[0];\nsx q[0];\nrz(0.788287681898749) q[0];\nsx q[0];\nrz(4.82552438063549) q[0];\nbarrier q[0];\nbarrier q[0];\nmeasure q[0] -> meas[0];",
+    "physical_qubits_old": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "loschmidt_control_1qubit": {
+    "job_id": "db7uusur6oqs7388co40",
+    "qubits": 1,
+    "opt_level": 0,
+    "physical_qubits": [
+      null
+    ],
+    "gate_counts": {
+      "rz": 3,
+      "sx": 2,
+      "barrier": 2,
+      "measure": 1
+    },
+    "depth": 6,
+    "transpiled_qasm": "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[156];\ncreg meas[1];\nrz(4.599253580133889) q[0];\nsx q[0];\nrz(5.494897625280837) q[0];\nsx q[0];\nrz(15.398292122129597) q[0];\nbarrier q[0];\nbarrier q[0];\nmeasure q[0] -> meas[0];",
+    "physical_qubits_old": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  }
+}
