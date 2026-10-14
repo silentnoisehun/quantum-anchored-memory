@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+venv/
+results/*.log
+results/qam_test_output.txt
+results/qam_results_*.json
+target/
+*.zip

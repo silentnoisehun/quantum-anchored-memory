@@ -1,0 +1,84 @@
+{
+  "project": "Quantum Anchored Memory (QAM)",
+  "backend": "ibm_kingston",
+  "execution_type": "real_quantum_hardware",
+  "timestamp": "2026-10-14T18:45:00+02:00",
+  "results": {
+    "sync_operations": [
+      {
+        "test": "SYnc 1-qubit (ψ(t) + Echo → 0 → ψ'(t))",
+        "qubits": 1,
+        "shots": 1024,
+        "time_seconds": 149.38,
+        "success_rate": 0.331,
+        "entropy": 0.916,
+        "job_id": "db7r5duil99s73fon78g",
+        "backend": "ibm_kingston",
+        "result_type": "quantum"
+      },
+      {
+        "test": "SYnc 5-qubit (ψ(t) + Echo → 0 → ψ'(t))",
+        "qubits": 5,
+        "shots": 1024,
+        "time_seconds": 93.82,
+        "success_rate": 0.0137,
+        "entropy": 4.874,
+        "job_id": "db7r6k8r1c5c738l5120",
+        "backend": "ibm_kingston",
+        "result_type": "quantum"
+      },
+      {
+        "test": "SYnc 10-qubit (ψ(t) + Echo → 0 → ψ'(t))",
+        "qubits": 10,
+        "shots": 1024,
+        "time_seconds": 87.73,
+        "success_rate": 0.0,
+        "entropy": 9.085,
+        "job_id": "db7r7q0r1c5c738l53g0",
+        "backend": "ibm_kingston",
+        "result_type": "quantum"
+      }
+    ],
+    "coherence_test": {
+      "test": "Koherencia mérés (5 qubit)",
+      "qubits": 5,
+      "coherence": 0.0,
+      "counts_sample": {
+        "10111": 53,
+        "11011": 40,
+        "00111": 49,
+        "10010": 24,
+        "10100": 18
+      },
+      "backend": "ibm_kingston",
+      "result_type": "quantum"
+    },
+    "memory_integration": {
+      "test": "microscope-memory D9 (5-qubit SYnc → 28.9s)",
+      "operation": "store",
+      "depth": 9,
+      "qubits": 5,
+      "shots": 1024,
+      "time_seconds": 28.92,
+      "success_rate": 0.028,
+      "entropy": 4.880,
+      "job_id": "db7r3j2raffc73fb4dkg",
+      "backend": "ibm_kingston",
+      "result_type": "quantum"
+    },
+    "wave_quantum": {
+      "test": "Wave-Quantum kódolás integráció",
+      "pearson": 0.9973,
+      "backend": "ibm_kingston",
+      "operation": "wave_quantum_encoding"
+    }
+  },
+  "benchmark_table": {
+    "SYnc_művelet_μs": 87729324.1,
+    "Target_μs": "< 10",
+    "Koherencia_%": 0.0,
+    "Target_Koherencia_%": "> 99",
+    "Wave_Pearson": 0.9973
+  },
+  "notes": "Három SYnc művelet (1, 5, 10 qubit) mind valós IBM Quantum hardware-n (ibm_kingston) futott le. A H+H+H=identity nem érvényes (H^3=H), így a visszaállás arány 50% körül van 1 qubiten, és alacsonyabb a többi esetén a kvantum zaj miatt. Az entropy a lehetséges maximális értéke felé konvergál, ami a valós hardware zajosságát tükrözi."
+}
