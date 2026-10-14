@@ -1,0 +1,16 @@
+{
+  "backend": "ibm_kingston",
+  "circuit": "H\u00b7X\u00b7H=Z (opt_level=3 \u2192 RZ)",
+  "job_id": "db7tthor1c5c738la3ig",
+  "success_rate": 0.998046875,
+  "counts": {
+    "0": 1022,
+    "1": 2
+  },
+  "result_type": "quantum",
+  "transpiled_gates": {
+    "rz": 1,
+    "barrier": 1,
+    "measure": 1
+  }
+}

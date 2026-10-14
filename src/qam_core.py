@@ -85,7 +85,7 @@ class QAM:
         qc.measure_all()
 
         # Transpile a backend target-hez (h-gate dekompozíciója natív kapukra)
-        qc = transpile(qc, self.backend, optimization_level=1, seed_transpiler=42)
+        qc = transpile(qc, self.backend, optimization_level=3, seed_transpiler=42)
 
         # qiskit-ibm-runtime 0.50.0: circuit listába kell tenni
         sampler = Sampler(self.backend)
@@ -127,7 +127,7 @@ class QAM:
         qc.measure_all()
 
         # Transpile
-        qc = transpile(qc, self.backend, optimization_level=1, seed_transpiler=42)
+        qc = transpile(qc, self.backend, optimization_level=3, seed_transpiler=42)
 
         sampler = Sampler(self.backend)
         job = sampler.run([qc], shots=shots)
