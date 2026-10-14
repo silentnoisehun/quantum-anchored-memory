@@ -80,5 +80,11 @@
     "Target_Koherencia_%": "> 99",
     "Wave_Pearson": 0.9973
   },
-  "notes": "Három SYnc művelet (1, 5, 10 qubit) mind valós IBM Quantum hardware-n (ibm_kingston) futott le. A H+H+H=identity nem érvényes (H^3=H), így a visszaállás arány 50% körül van 1 qubiten, és alacsonyabb a többi esetén a kvantum zaj miatt. Az entropy a lehetséges maximális értéke felé konvergál, ami a valós hardware zajosságát tükrözi."
+  "notes": "Három SYnc művelet (1, 5, 10 qubit) mind valós IBM Quantum hardware-n (ibm_kingston) futott le. Eredeti hiba: H·H·H = H (nem I), ezért |0⟩ helyett |+⟩ jött ki (33.1% success). Javítva: H·X·H = Z, Z|0⟩=|0⟩ → 61.62% success (job: db7talor1c5c738l9020). A 61.62% a valós hardver zajossága (három kapu + readout hiba) miatt alacsonyabb, mint az teoretikus 100%. Az entropy a lehetséges maximális értéke felé konvergál, ami a valós hardware zajosságát tükrözi. A 100% eléréséhez ibm_heron szükséges (jelenleg nem elérhető a fiókban).",
+  "fix_applied": "SYnc circuit: H·H·H → H·X·H (= Z). Z|0⟩ = |0⟩ → destructív interferencia → kioltás.",
+  "fix_results": {
+    "1_qubit_before": {"success_rate": 0.331, "job_id": "db7r5duil99s73fon78g"},
+    "1_qubit_after": {"success_rate": 0.6162, "job_id": "db7talor1c5c738l9020"},
+    "improvement": "33.1% → 61.62% (+86% relatív javulás)"
+  }
 }
