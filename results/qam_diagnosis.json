@@ -1,0 +1,21 @@
+{
+  "diagnosis": "UNKNOWN: statevector=-1%, good_qubit=99.31640625%",
+  "statevector_p0": -1,
+  "aer_simulator_p0": 100.0,
+  "qbit0_hardware_p0": 49.31640625,
+  "good_qubit_hardware_p0": 99.31640625,
+  "good_qubit": 91,
+  "good_qubit_gates": {
+    "x": 2,
+    "barrier": 1,
+    "measure": 1
+  },
+  "qbit0_gates": {
+    "x": 2,
+    "barrier": 1,
+    "measure": 1
+  },
+  "qbit0_qubits": [
+    91
+  ]
+}

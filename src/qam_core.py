@@ -55,39 +55,64 @@ class QAM:
                 self.service = None
                 self.backend = None
 
-    def sync_operation(self, qubits=5, shots=1024):
+    def sync_operation(self, qubits=5, shots=1024, opt_level=0, initial_layout=None):
         """
-        SYnc művelet: ψ(t) + Echo(ψ) → 0 → ψ'(t)
-        Három lépés:
-          1. ψ(t) = H|0⟩ = |+⟩          (hullámfüggvény létrehozása)
-          2. Echo: X|+⟩ = |+⟩           (X eigenstate, fázisműtő a Z-tól)
-          3. SYnc: H|+⟩ = |0⟩           (destructív interferencia → kioltás)
-        H·X·H = Z, tehát Z|0⟩ = |0⟩ → ~100% siker (hardver zajtól függően)
-        ⚠️ Régi hibás változat: H·H·H = H (nem I), ezért |0⟩ helyett |+⟩ jört volna ki.
+        SYnc művelet: psi(t) + Echo(pi) -> 0 -> psi'(t)
+
+        Valódi Loschmidt Echo megközelites:
+          1. psi(t) = U|0>       (veletlen allapot)
+          2. Echo(pi) = U†      (inverz kapu)
+          3. SYnc: U·U†|0> = |0> (destruktiv interferencia)
+
+        Ket kritikus parameter:
+        - opt_level=0 (alapertelmezett): megorzi a kapukat!
+          (opt_level=3 a U·U†=I-t torli -> trivalisan ~99.8%)
+        - initial_layout: a jo fizikai qubit megadasa!
+          (opt_level=0 a qbit 0-at valasztja, ami rossz lehet)
+
+        Ha initial_layout=None es qubits==1, akkor opt_level=3-mal megtalalja a
+        jol mukodo fizikai qubitet, majd opt_level=0-val fut a teszt rajta.
         """
         if not self.backend:
             return self._simulated_sync(qubits=qubits, shots=shots)
 
+        # --- Qubit kivalasztas: ha nincs explicit layout, hasznaljunk opt_level=3-at ---
+        if initial_layout is None and qubits == 1:
+            qc_tmp = QuantumCircuit(1)
+            qc_tmp.x(0)
+            qc_tmp.x(0)  # X·X = I -> semmi kapu
+            qc_tmp.measure_all()
+            tqc_tmp = transpile(qc_tmp, self.backend, optimization_level=3,
+                                seed_transpiler=42)
+            vbits = tqc_tmp.layout.initial_layout.get_virtual_bits()
+            good_qubits = [v for q, v in vbits.items() if 'ancilla' not in repr(q)]
+            initial_layout = good_qubits[:qubits] if good_qubits else None
+            print(f"  Auto-detected good qubit: {initial_layout[0] if initial_layout else 'None'}", flush=True)
+
+        # --- Loschmidt Echo kor: U|0> -> U† -> |0> ---
+        np.random.seed(42)
         qc = QuantumCircuit(qubits)
 
-        # 1. ψ(t) – hullámfüggvény (Hadamard = szuperpozíció)
         for q in range(qubits):
-            qc.h(q)
-
-        # 2. Echo(ψ) – X kapu (fázisműtő, X|+⟩ = |+⟩, eigenstate)
-        for q in range(qubits):
-            qc.x(q)
-
-        # 3. SYnc → |0⟩ (kioltás: H·X·H = Z, Z|0⟩ = |0⟩)
-        for q in range(qubits):
-            qc.h(q)
+            theta = np.random.uniform(0, 2 * np.pi)
+            phi = np.random.uniform(0, 2 * np.pi)
+            lam = np.random.uniform(0, 2 * np.pi)
+            qc.u(theta, phi, lam, q)            # psi(t) = U|0>
+            qc.barrier()
+            qc.u(theta, phi, lam, q).inverse()  # Echo = U†
+            qc.barrier()
 
         qc.measure_all()
 
-        # Transpile a backend target-hez (h-gate dekompozíciója natív kapukra)
-        qc = transpile(qc, self.backend, optimization_level=3, seed_transpiler=42)
+        # Transpile — FONTOS: opt_level=0 a kapuk megorzese erdekeben!
+        transpile_kwargs = {
+            'optimization_level': opt_level,
+            'seed_transpiler': 42,
+        }
+        if initial_layout is not None:
+            transpile_kwargs['initial_layout'] = initial_layout
+        qc = transpile(qc, self.backend, **transpile_kwargs)
 
-        # qiskit-ibm-runtime 0.50.0: circuit listába kell tenni
         sampler = Sampler(self.backend)
         start = time.time()
         job = sampler.run([qc], shots=shots)
@@ -187,7 +212,7 @@ class QAM:
         qc.measure_all()
         elapsed = time.time() - start
 
-        # H·X·H = Z → Z|0⟩ = |0⟩ → ~100% siker
+        # U·U† = I → I|0⟩ = |0⟩ → ~100% siker
         success_rate = 0.9998
         entropy = 0.0003
 

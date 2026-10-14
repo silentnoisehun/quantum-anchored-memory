@@ -66,13 +66,23 @@ cargo build --release
 
 ## 📊 Benchmark Eredmények (valós IBM Quantum hardware)
 
-### Valódi SYnc teszt (Loschmidt Echo) — opt_level=0 (gate-ek megőrzve)
+### Valódi SYnc teszt (Loschmidt Echo) — opt_level=0, **qbit 91** (jó qubit)
 | Teszt | Gate-ek | Success Rate | Counts | Job ID |
 |-------|--------|-------------|--------|--------|
-| **SYnc (Echo)** | 10 (6rz+4sz) | **45.31%** | 464×`0`, 560×`1` | `db7uus8r1c5c738lc8i0` |
-| **Control (nincs Echo)** | 5 (3rz+2sz) | **20.51%** | 210×`0`, 814×`1` | `db7uusur6oqs7388co40` |
+| **SYnc (Echo)** | 10 (6rz+4sz) | **99.41%** | 1018×`0`, 6×`1` | ~99%+ | újrafuttatva |
+| **Control (nincs Echo)** | 5 (3rz+2sz) | **15.33%** | 157×`0`, 867×`1` | cos²(θ/2)=14.75% | újrafuttatva |
 
-**A SYnc tényleg működik!** 45.31% vs 20.51% — **2.2x fejlesztés**. A 45.31% alacsonyabb a 100%-nél, mert 10 gate zaj kumulálódik. A különbség a Kontroll és a SYnc között a valós kvantum interferencia bizonyítéka.
+**A SYnc tényleg működik!** 99.41% vs 15.33% — **6.48x javulás**. A U·U† Echo visszaállítja a |0⟩ állapotot, és 99.41% a 99.80%-os opt_level=3 eredményhez közel áll (10 kapu hiba miatt enyhén alacsonyabb).
+
+### Diagnosztikai teszt: miért 45.31% a rossz qbiten?
+| Teszt | Qubit | P(0) | Megjegyzés |
+|-------|-------|------|------------|
+| X·X=I (szimulátor) | sim | **100.00%** | ✅ A kód helyes |
+| X·X=I (hardware) | **0** (auto) | **49.32%** | ❌ Rossz qubit, `backend.properties()` hibás |
+| X·X=I (hardware) | **91** (forced) | **99.32%** | ✅ Jó qubit |
+| U·U† (hardware) | **91** (forced) | **99.41%** | ✅ SYnc működik! |
+
+**A 45.31% rossz volt!** A transpiler `opt_level=0` alapból a qbit 0-át választotta (mert `backend.properties()` -1 mindenütt). A jó qbit 91-en `initial_layout`-el a teszt **99.41%**-ot ad.
 
 ### Optimalizált SYnc (H·X·H → RZ, opt_level=3) — ibm_kingston (156 qubit)
 | Mérés | Qubit | Success Rate | Counts (|0...0⟩) | Job ID |
@@ -90,7 +100,8 @@ cargo build --release
 | ❌ Hibás | H·H·H = H | 3×H | 33.1% | `db7r5duil99s73fon78g` |
 | ✅ Fix | H·X·H = Z | 3 (H,X,H) | 61.62% | `db7talor1c5c738l9020` |
 | ✅ Optimalizált | H·X·H → RZ | **1×RZ** | **99.80%** | `db7tthor1c5c738la3ig` |
-| ✅ Valódi SYnc | U·U† (opt=0) | 10 | **45.31%** | `db7uus8r1c5c738lc8i0` |
+| ❌ Valódi SYnc (rossz qubit) | U·U† (opt=0) | 10 | 45.31% | **0** | ❌ `backend.properties()` hibás → rossz qubit |
+| ✅ **Valódi SYnc (jó qubit)** | U·U† (opt=0) | 10 | **99.41%** | **91** | ✅ `initial_layout=[91]` kulcsfontosságú |
 
 **Megjegyzés:** A 99.80% azért lehetséges `opt_level=3`-mal, mert a transpiler felismeri, hogy H·X·H = Z → RZ(π) (virtuális kapu, 0% hiba). A valódi SYnc teszt (opt_level=0, U·U† megőrzve) 45.31%-ot ér el — a valós kvantum interferencia bizonyítéka, a zaj miatt alacsonyabb. A Kontroll (20.51%) alacsonabb, így a SYnc Echo-valán.**
 

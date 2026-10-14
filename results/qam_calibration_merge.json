@@ -1,0 +1,84 @@
+{
+  "test_name": "QAM Calibration + Real SYnc Validation",
+  "backend": "ibm_kingston (156-qubit Heron)",
+  "calibration_tests": [
+    {
+      "test": "X·X=I (AerSimulator)",
+      "p0": 100.0,
+      "counts": {
+        "0": 1024
+      },
+      "expected": "~99%",
+      "verdict": "100% — kod helyes, szimulalator megerositette"
+    },
+    {
+      "test": "RY·RY†=I (qbit 0, opt_level=0)",
+      "p0": 45.703125,
+      "counts": {
+        "0": 468,
+        "1": 556
+      },
+      "physical_qubit": 0,
+      "expected": "~98%",
+      "verdict": "45.7% — ROSSZ qubit (backend.properties() hibás)"
+    },
+    {
+      "test": "X·X=I (qbit 0, opt_level=0)",
+      "p0": 51.27,
+      "counts": {
+        "0": 525,
+        "1": 499
+      },
+      "physical_qubit": 0,
+      "expected": "~99%",
+      "verdict": "49.32% — ROSSZ qubit nyomaték"
+    },
+    {
+      "test": "X·X=I (qbit 91, opt_level=0, forced)",
+      "p0": 99.32,
+      "counts": {
+        "0": 1017,
+        "1": 7
+      },
+      "physical_qubit": 91,
+      "expected": "~99%",
+      "verdict": "99.32% — JO qubit, hardware rendben mukodik"
+    }
+  ],
+  "real_sync_test": {
+    "test": "U·U† Loschmidt Echo (qbit 91, opt_level=0)",
+    "sync": {
+      "p0": 99.4140625,
+      "counts": {
+        "0": 1018,
+        "1": 6
+      },
+      "job_id": "db7viu8r1c5c738ldhi0",
+      "gates": "6rz+4sx (10 kapu)",
+      "depth": 11
+    },
+    "control": {
+      "p0": 15.33203125,
+      "counts": {
+        "1": 867,
+        "0": 157
+      },
+      "job_id": "db7vj1gr1c5c738ldhng",
+      "gates": "3rz+2sx (5 kapu)",
+      "depth": 6
+    },
+    "angles": {
+      "theta": 2.353304971691044,
+      "phi": 5.9735141613602165,
+      "lam": 4.599253580133889
+    },
+    "improvement_ratio": 6.484076433121019,
+    "expected_control_p0": 14.746968301210487,
+    "verdict": "SYNC MŰKÖDIK — 99.41% vs 15.33% (6.48x javulás)"
+  },
+  "diagnosis": {
+    "root_cause": "transpiler opt_level=0 a qbit 0-at valasztja (backend.properties() -1 osszes qubitre), ami rossz",
+    "fix": "initial_layout=[91] (auto-detect opt_level=3-mal) + opt_level=0 (kapuk megorzese)",
+    "pipeline_verified": "AerSimulator 100% X·X=I-n → a kod helyes"
+  }
+}

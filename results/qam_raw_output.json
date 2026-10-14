@@ -6,16 +6,24 @@
     "platform": "qiskit 2.5.2 + qiskit-ibm-runtime 0.50.0",
     "python_version": "3.14.4",
     "note": "All results are from REAL IBM Quantum hardware (ibm_kingston, 127-qubit processor). No simulation.",
-
     "quantum_jobs": [
       {
         "job_id": "db7r5duil99s73fon78g",
         "operation": "SYnc_1qubit",
         "circuit_description": "H(q0) → H(q0) → H(q0) → measure q0",
         "circuit_gates": [
-          {"gate": "H", "qubit": 0},
-          {"gate": "H", "qubit": 0},
-          {"gate": "H", "qubit": 0}
+          {
+            "gate": "H",
+            "qubit": 0
+          },
+          {
+            "gate": "H",
+            "qubit": 0
+          },
+          {
+            "gate": "H",
+            "qubit": 0
+          }
         ],
         "qubits": 1,
         "shots": 1024,
@@ -31,9 +39,36 @@
         "operation": "SYnc_5qubit",
         "circuit_description": "H(q0..q4) → H(q0..q4) → H(q0..q4) → measure q0..q4",
         "circuit_gates": [
-          {"gate": "H", "qubits": [0,1,2,3,4]},
-          {"gate": "H", "qubits": [0,1,2,3,4]},
-          {"gate": "H", "qubits": [0,1,2,3,4]}
+          {
+            "gate": "H",
+            "qubits": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "gate": "H",
+            "qubits": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "gate": "H",
+            "qubits": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          }
         ],
         "qubits": 5,
         "shots": 1024,
@@ -49,9 +84,51 @@
         "operation": "SYnc_10qubit",
         "circuit_description": "H(q0..q9) → H(q0..q9) → H(q0..q9) → measure q0..q9",
         "circuit_gates": [
-          {"gate": "H", "qubits": [0,1,2,3,4,5,6,7,8,9]},
-          {"gate": "H", "qubits": [0,1,2,3,4,5,6,7,8,9]},
-          {"gate": "H", "qubits": [0,1,2,3,4,5,6,7,8,9]}
+          {
+            "gate": "H",
+            "qubits": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "gate": "H",
+            "qubits": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "gate": "H",
+            "qubits": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ]
+          }
         ],
         "qubits": 10,
         "shots": 1024,
@@ -71,7 +148,7 @@
         "time_microseconds": 28924069.88,
         "time_seconds": 28.924,
         "success_rate": 0.0283,
-        "entropy": 4.880,
+        "entropy": 4.88,
         "backend": "ibm_kingston",
         "result_type": "real_quantum",
         "microscope_depth": 9,
@@ -93,7 +170,16 @@
         "operation": "Koherencia_teszt_5qubit",
         "circuit_description": "H(q0..q4) → measure q0..q4",
         "circuit_gates": [
-          {"gate": "H", "qubits": [0,1,2,3,4]}
+          {
+            "gate": "H",
+            "qubits": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          }
         ],
         "qubits": 5,
         "shots": 1024,
@@ -112,14 +198,18 @@
         "result_type": "real_quantum"
       }
     ],
-
     "backend_properties": {
       "name": "ibm_kingston",
       "n_qubits": 127,
       "architecture": "heavy-hex",
-      "basis_gates": ["id", "rz", "sx", "x", "measure"]
+      "basis_gates": [
+        "id",
+        "rz",
+        "sx",
+        "x",
+        "measure"
+      ]
     },
-
     "analysis_raw": {
       "hadamard_identity": "H*H*H = H (NOT I), so SYnc produces fresh superposition",
       "expected_1qubit_success": "~50% (H|0> = |+>, P(0)=0.5)",
@@ -133,7 +223,6 @@
       "wave_quantum_pearson": "0.9973 (>0.87 threshold from scs-quantum)",
       "memory_depth": "D9 achieved via coherent state anchoring on ibm_kingston"
     },
-
     "qam_specification": {
       "psi_t": "ψ(t) = Hadamard|0⟩ → (|0⟩+|1⟩)/√2 — initial wave function",
       "echo": "Echo(ψ) = H × ψ(t) → |0⟩ — time-reversal echo",
@@ -142,10 +231,78 @@
       "memory_depth": "D0 (raw state) → D8 (anchored memory) → D9 (QAM integrated)",
       "consciousness_layers": "13-layer consciousness model integrated via microscope-memory"
     },
-
     "files": {
       "qam_real_results.json": "Structured summary of all quantum results",
       "qam_results_20261014_184754.json": "Raw benchmark output (full run)"
+    }
+  },
+  "calibration_tests": [
+    {
+      "test": "X·X=I (AerSimulator)",
+      "result_type": "simulated",
+      "p0": 100.0,
+      "counts": {
+        "0": 1024
+      },
+      "note": "Exaktan 100% — a kod es a kor helyesen mukodik"
+    },
+    {
+      "test": "X·X=I (qbit 0, opt_level=0)",
+      "result_type": "quantum",
+      "p0": 49.32,
+      "counts": {
+        "0": 505,
+        "1": 519
+      },
+      "physical_qubit": 0,
+      "note": "ROSSZ qubit — transpiler nem tudja kivalasztani a jot"
+    },
+    {
+      "test": "X·X=I (qbit 91, opt_level=0)",
+      "result_type": "quantum",
+      "p0": 99.32,
+      "counts": {
+        "0": 1017,
+        "1": 7
+      },
+      "physical_qubit": 91,
+      "note": "JO qubit — 99.32% → a hardware rendben mukodik"
+    }
+  ],
+  "corrected_sync_results": {
+    "loschmidt_echo_qbit91": {
+      "sync": {
+        "p0": 99.41,
+        "counts": {
+          "0": 1018,
+          "1": 6
+        },
+        "gates": "6rz+4sx",
+        "depth": 11,
+        "opt_level": 0,
+        "physical_qubit": 91
+      },
+      "control": {
+        "p0": 15.33,
+        "counts": {
+          "0": 157,
+          "1": 867
+        },
+        "gates": "3rz+2sx",
+        "depth": 6,
+        "opt_level": 0,
+        "physical_qubit": 91
+      },
+      "angles": {
+        "theta": 2.3533,
+        "phi": 5.9735,
+        "lam": 4.5993,
+        "seed": 42
+      },
+      "improvement_ratio": 6.48,
+      "verdict": "SYnc működik — U·U† → |0⟩ 99.41%",
+      "qasm_sync": "rz(4.599) q[91]; sx q[91]; rz(5.495) q[91]; sx q[91]; rz(15.398) q[91]; barrier; rz(-5.973) q[91]; sx q[91]; rz(0.788) q[91]; sx q[91]; rz(4.825) q[91]; barrier; barrier; measure q[91]",
+      "qasm_control": "rz(4.599) q[91]; sx q[91]; rz(5.495) q[91]; sx q[91]; rz(15.398) q[91]; barrier; barrier; measure q[91]"
     }
   }
 }

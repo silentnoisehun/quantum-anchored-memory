@@ -1,0 +1,31 @@
+{
+  "test_name": "Real SYnc Loschmidt Echo (qbit 91)",
+  "angles": {
+    "theta": 2.353304971691044,
+    "phi": 5.9735141613602165,
+    "lam": 4.599253580133889
+  },
+  "expected_control_p0": 14.746968301210487,
+  "sync": {
+    "p0": 99.4140625,
+    "counts": {
+      "0": 1018,
+      "1": 6
+    },
+    "job_id": "db7viu8r1c5c738ldhi0"
+  },
+  "control": {
+    "p0": 15.33203125,
+    "counts": {
+      "1": 867,
+      "0": 157
+    },
+    "job_id": "db7vj1gr1c5c738ldhng"
+  },
+  "verdict": "✅ SYNC MŰKÖDIK — U·U† → |0⟩ teszi a munkáját!",
+  "backend": "ibm_kingston",
+  "physical_qubit": 91,
+  "opt_level": 0,
+  "sync_qasm": "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[156];\ncreg meas[1];\nrz(4.599253580133889) q[91];\nsx q[91];\nrz(5.494897625280837) q[91];\nsx q[91];\nrz(15.398292122129597) q[91];\nbarrier q[91];\nrz(-5.9735141613602165) q[91];\nsx q[91];\nrz(0.788287681898749) q[91];\nsx q[91];\nrz(4.82552438063549) q[91];\nbarrier q[91];\nbarrier q[91];\nmeasure q[91] -> meas[0];",
+  "control_qasm": "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[156];\ncreg meas[1];\nrz(4.599253580133889) q[91];\nsx q[91];\nrz(5.494897625280837) q[91];\nsx q[91];\nrz(15.398292122129597) q[91];\nbarrier q[91];\nbarrier q[91];\nmeasure q[91] -> meas[0];"
+}
