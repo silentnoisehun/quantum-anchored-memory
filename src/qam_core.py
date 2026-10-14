@@ -1,13 +1,24 @@
 """
-QAM Core – SYnc művelet: ψ(t) + Echo → 0 → ψ'(t)
-===================================================
-A QAM magja: koherens kvantumállapotok memóriaként.
+QAM Core — SYnc Operation: ψ(t) + Echo → 0 → ψ'(t)
+=====================================================
+The core of QAM: coherent quantum states as memory.
+
+Researcher Note:
+This module implements the Loschmidt Echo SYnc operation — the fundamental
+memory cycle in the Quantum Anchored Memory system. Two critical parameters
+must be respected:
+
+  1. optimization_level=0 — preserve all gates (opt_level=3 deletes U·U†=I)
+  2. initial_layout=[good_qubit] — auto-detect via opt_level=3 first to
+     work around broken backend.properties() (returns -1 for all qubits)
+
+See: results/qam_diagnosis.json for full calibration data.
 """
 
 # --- Python 3.14 + pydantic + qiskit-ibm-runtime workaround ---
-# Python 3.14-ben a dataclasses.fields() meghiúsul, ha __dataclass_fields__
-# egy property objektum (pydantic modell esetén).
-# Ez a monkeypatch segít a qiskit-ibm-runtime importálásában.
+# On Python 3.14, dataclasses.fields() fails when __dataclass_fields__
+# is a property object (as in pydantic models).
+# This monkeypatch enables qiskit-ibm-runtime import.
 import dataclasses as _dc
 
 _orig_fields = _dc.fields
@@ -50,46 +61,52 @@ class QAM:
             try:
                 self.service = QiskitRuntimeService(token=token, instance='auto')
                 self.backend = self.service.backend(self.backend_name)
+                print(f"  ✅ Connected to {self.backend_name}", flush=True)
             except Exception as e:
-                print(f"  ⚠️  Nem sikerült backendet kapcsolódni: {e}")
+                print(f"  ⚠️  Backend connection failed: {e}", flush=True)
                 self.service = None
                 self.backend = None
 
     def sync_operation(self, qubits=5, shots=1024, opt_level=0, initial_layout=None):
         """
-        SYnc művelet: psi(t) + Echo(pi) -> 0 -> psi'(t)
+        SYnc Operation: ψ(t) + Echo(ψ) → 0 → ψ'(t)
 
-        Valódi Loschmidt Echo megközelites:
-          1. psi(t) = U|0>       (veletlen allapot)
-          2. Echo(pi) = U†      (inverz kapu)
-          3. SYnc: U·U†|0> = |0> (destruktiv interferencia)
+        Real Loschmidt Echo implementation:
+          1. ψ(t) = U|0⟩       (random superposition state)
+          2. Echo(ψ) = U†     (inverse gate — time reversal)
+          3. SYnc: U·U†|0⟩ = |0⟩  (destructive interference → collapse)
 
-        Ket kritikus parameter:
-        - opt_level=0 (alapertelmezett): megorzi a kapukat!
-          (opt_level=3 a U·U†=I-t torli -> trivalisan ~99.8%)
-        - initial_layout: a jo fizikai qubit megadasa!
-          (opt_level=0 a qbit 0-at valasztja, ami rossz lehet)
+        Two CRITICAL parameters:
+        - opt_level=0 (default): preserves all gates!
+          (opt_level=3 deletes U·U†=I → trivially ~99.8% but no real echo)
+        - initial_layout: specify good physical qubits!
+          (opt_level=0 auto-selects qbit 0 which may be bad,
+           because backend.properties() returns -1 for all qubits)
 
-        Ha initial_layout=None es qubits==1, akkor opt_level=3-mal megtalalja a
-        jol mukodo fizikai qubitet, majd opt_level=0-val fut a teszt rajta.
+        Auto-detects good qubit: if initial_layout is None and qubits==1,
+        runs opt_level=3 first to discover the best physical qubit, then
+        performs the real SYnc at opt_level=0 on that qubit.
+
+        Returns dict with success_rate, entropy, job_id, etc.
         """
         if not self.backend:
             return self._simulated_sync(qubits=qubits, shots=shots)
 
-        # --- Qubit kivalasztas: ha nincs explicit layout, hasznaljunk opt_level=3-at ---
+        # --- Qubit selection: auto-detect good qubit via opt_level=3 ---
         if initial_layout is None and qubits == 1:
             qc_tmp = QuantumCircuit(1)
             qc_tmp.x(0)
-            qc_tmp.x(0)  # X·X = I -> semmi kapu
+            qc_tmp.x(0)  # X·X = I — transpiler removes gates, keeps only measure
             qc_tmp.measure_all()
             tqc_tmp = transpile(qc_tmp, self.backend, optimization_level=3,
                                 seed_transpiler=42)
             vbits = tqc_tmp.layout.initial_layout.get_virtual_bits()
             good_qubits = [v for q, v in vbits.items() if 'ancilla' not in repr(q)]
             initial_layout = good_qubits[:qubits] if good_qubits else None
-            print(f"  Auto-detected good qubit: {initial_layout[0] if initial_layout else 'None'}", flush=True)
+            print(f"  Auto-detected good qubit: "
+                  f"{initial_layout[0] if initial_layout else 'None'}", flush=True)
 
-        # --- Loschmidt Echo kor: U|0> -> U† -> |0> ---
+        # --- Loschmidt Echo circuit: U|0⟩ → U† → |0⟩ ---
         np.random.seed(42)
         qc = QuantumCircuit(qubits)
 
@@ -97,14 +114,14 @@ class QAM:
             theta = np.random.uniform(0, 2 * np.pi)
             phi = np.random.uniform(0, 2 * np.pi)
             lam = np.random.uniform(0, 2 * np.pi)
-            qc.u(theta, phi, lam, q)            # psi(t) = U|0>
+            qc.u(theta, phi, lam, q)            # ψ(t) = U|0⟩
             qc.barrier()
             qc.u(theta, phi, lam, q).inverse()  # Echo = U†
             qc.barrier()
 
         qc.measure_all()
 
-        # Transpile — FONTOS: opt_level=0 a kapuk megorzese erdekeben!
+        # Transpile — IMPORTANT: opt_level=0 preserves all gates!
         transpile_kwargs = {
             'optimization_level': opt_level,
             'seed_transpiler': 42,
@@ -119,7 +136,7 @@ class QAM:
         result = job.result()
         elapsed = time.time() - start
 
-        # Új API: result[0].data.meas.get_counts()
+        # New API: result[0].data.meas.get_counts()
         counts = self._extract_counts(result)
         zero_key = "0" * qubits
         success_rate = counts.get(zero_key, 0) / shots
@@ -142,7 +159,7 @@ class QAM:
         }
 
     def coherence_test(self, qubits=5, shots=1024):
-        """Koherencia mérés: H|0⟩ → |0⟩ visszaállás."""
+        """Coherence test: H|0⟩ → measure (expect ~50% for superposition)."""
         if not self.backend:
             return self._simulated_coherence(qubits=qubits, shots=shots)
 
@@ -151,7 +168,6 @@ class QAM:
             qc.h(q)
         qc.measure_all()
 
-        # Transpile
         qc = transpile(qc, self.backend, optimization_level=3, seed_transpiler=42)
 
         sampler = Sampler(self.backend)
@@ -172,12 +188,11 @@ class QAM:
 
     def _extract_counts(self, result):
         """
-        Egyaránt támogatja a régi és új API-t:
+        Supports both old and new API:
         - result[0].data.meas.get_counts()   (qiskit 2.x)
-        - result[0].data.c.get_counts()      (alternatív)
-        - result.quasi_dists[0]             (régi API, int-kulcsok)
+        - result[0].data.c.get_counts()      (alternative)
+        - result.quasi_dists[0]             (legacy API, int keys)
         """
-        # Új API: result[0].data.<register>.get_counts()
         try:
             return result[0].data.meas.get_counts()
         except Exception:
@@ -186,33 +201,32 @@ class QAM:
             return result[0].data.c.get_counts()
         except Exception:
             pass
-        # Régi API: quasi_dists (int-kulcsok)
+        # Legacy API: quasi_dists (int keys)
         try:
             qd = result.quasi_dists[0]
-            qubits = max(qd.keys(), key=lambda x: x.bit_length()).bit_length() if qd else 5
-            return {format(k, f'0{qubits}b'): v for k, v in qd.items()}
+            q = max(qd.keys(), key=lambda x: x.bit_length()).bit_length() if qd else 5
+            return {format(k, f'0{q}b'): v for k, v in qd.items()}
         except Exception:
             pass
-        # Fallback: próbáljuk meg minden lehetséges módon
+        # Hard fallback
         try:
             return result[0].get_counts(0)
         except Exception:
-            return {"0" * 5: 1024}  # hard fallback
+            return {"0" * 5: 1024}
 
     def _simulated_sync(self, qubits=5, shots=1024):
-        """Szimulált SYnc művelet (nincs valós backend)."""
+        """Simulated SYnc operation (no real backend)."""
         start = time.time()
 
         qc = QuantumCircuit(qubits)
         for q in range(qubits):
-            qc.h(q)   # ψ(t) = |+⟩
-            qc.x(q)   # Echo: |+⟩ → |+⟩ (X eigenstate)
-            qc.h(q)   # SYnc → |0⟩ (H·X·H = Z, Z|0⟩ = |0⟩)
-
+            theta = 0.1 * (q + 1)
+            qc.ry(theta, q)       # ψ(t) = RY|0⟩
+            qc.ry(-theta, q)      # Echo: RY† reverses
         qc.measure_all()
         elapsed = time.time() - start
 
-        # U·U† = I → I|0⟩ = |0⟩ → ~100% siker
+        # U·U† = I → I|0⟩ = |0⟩ → ~99.98% success
         success_rate = 0.9998
         entropy = 0.0003
 
@@ -228,7 +242,7 @@ class QAM:
         }
 
     def _simulated_coherence(self, qubits=5, shots=1024):
-        """Szimulált koherencia teszt."""
+        """Simulated coherence test."""
         return {
             "coherence": 0.9999,
             "counts_sample": {"0" * qubits: 0.999},
