@@ -1,150 +1,103 @@
+#!/usr/bin/env python3
 """
-Kalibrációs teszt: egyszerű U·U† = I circuit.
-Ha ez is ~50% lesz, a pipeline (monkeypatch / backend / sampler) hibás.
+Calibration sanity check: X·X = I and RY(π/2)·RY(-π/2) = I at opt_level=0.
+Supports --local (StatevectorSampler, 0 quota) and real IBM QPU execution
+via IBM_QUANTUM_TOKEN environment variable.
 """
-import json, os, sys, numpy as np
 
-sys.path.insert(0, '.')
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-from src.qam_core import QAM  # applies monkeypatch FIRST
+from __future__ import annotations
 
-apikey_path = 'C:/Users/mater/.codync/bots/69ea5c5b-5783-44fd-9c74-505d948621ce/workspace/uploads/f5ecde4c-1606-4c56-901b-3198edf6e08c/apikey.json'
-token = json.load(open(apikey_path)).get('apikey')
-qam = QAM(token=token, backend='ibm_kingston')
-backend = qam.backend
+import argparse
+import json
+import math
+from pathlib import Path
 
 from qiskit import QuantumCircuit, transpile
-from qiskit_ibm_runtime import Sampler
+from qiskit.primitives import StatevectorSampler
 
-print(f'✅ Backend: {backend.name}, {backend.num_qubits} qubits', flush=True)
+from src.qam_core import QAM, _run_runtime_sampler, resolve_ibm_token, wilson_ci
 
-# --- TEST 1: RY(pi/2) → RY(-pi/2) → measure (should be |0⟩ with ~98%) ---
-print(f'\n{"="*50}', flush=True)
-print('TEST 1: RY(π/2)·RY(-π/2) = I → |0⟩', flush=True)
-qc1 = QuantumCircuit(1)
-qc1.ry(np.pi/2, 0)
-qc1.ry(-np.pi/2, 0)  # inverse, should cancel
-qc1.measure_all()
 
-tqc1 = transpile(qc1, backend, optimization_level=0, seed_transpiler=42)
-print(f'QASM:\n{tqc1.qasm() if hasattr(tqc1, "qasm") else "[qiskit 2.x — no qasm()]"}', flush=True)
-try:
-    from qiskit.qasm2 import dumps
-    print(f'QASM2:\n{dumps(tqc1)}', flush=True)
-except:
-    pass
+def build_calibration_circuits() -> dict[str, QuantumCircuit]:
+    qc_xx = QuantumCircuit(1)
+    qc_xx.x(0)
+    qc_xx.barrier()
+    qc_xx.x(0)
+    qc_xx.barrier()
+    qc_xx.measure_all()
 
-# Get the physical qubit from the layout
-try:
-    vbits = tqc1.layout.initial_layout.get_virtual_bits()
-    phys_qubits = [v for q, v in vbits.items() if 'ancilla' not in repr(q)]
-    print(f'Physical qubit: {phys_qubits[:1]}', flush=True)
-    # Check backend properties for that qubit
-    props = backend.properties()
-    if props and phys_qubits:
-        pq = phys_qubits[0]
-        print(f'T1[{pq}]: {props.t1(pq)}', flush=True)
-        print(f'T2[{pq}]: {props.t2(pq)}', flush=True)
-        print(f'Readout err[{pq}]: {props.readout_error(pq)}', flush=True)
-        # Check gate errors
-        for ginfo in props.gate_errors():
-            if ginfo.gate_name in ('rz', 'sx') and pq in ginfo.qubits:
-                if ginfo.gate_name == 'sx':
-                    print(f'{ginfo.gate_name} error on {ginfo.qubits}: {ginfo.error}', flush=True)
-except Exception as e:
-    print(f'Layout/properties error: {e}', flush=True)
+    qc_ry = QuantumCircuit(1)
+    qc_ry.ry(math.pi / 2.0, 0)
+    qc_ry.barrier()
+    qc_ry.ry(-math.pi / 2.0, 0)
+    qc_ry.barrier()
+    qc_ry.measure_all()
 
-# Run it
-sampler = Sampler(backend)
-job1 = sampler.run([tqc1], shots=1024)
-result1 = job1.result()
-counts1 = result1[0].data.meas.get_counts()
-print(f'\n✅ TEST 1 RESULT: {counts1}', flush=True)
-total1 = sum(counts1.values())
-p0_1 = counts1.get('0', 0) / total1 * 100
-print(f'   P(0) = {p0_1:.2f}%', flush=True)
+    return {"xx_identity": qc_xx, "ry_echo": qc_ry}
 
-# --- TEST 2: X → X → measure (X² = I → |0⟩) ---
-print(f'\n{"="*50}', flush=True)
-print('TEST 2: X·X = I → |0⟩ (simplest identity)', flush=True)
-qc2 = QuantumCircuit(1)
-qc2.x(0)
-qc2.x(0)  # X² = I
-qc2.measure_all()
-tqc2 = transpile(qc2, backend, optimization_level=0, seed_transpiler=42)
-try:
-    from qiskit.qasm2 import dumps
-    print(f'QASM2:\n{dumps(tqc2)}', flush=True)
-except:
-    pass
 
-job2 = sampler.run([tqc2], shots=1024)
-result2 = job2.result()
-counts2 = result2[0].data.meas.get_counts()
-print(f'\n✅ TEST 2 RESULT: {counts2}', flush=True)
-total2 = sum(counts2.values())
-p0_2 = counts2.get('0', 0) / total2 * 100
-print(f'   P(0) = {p0_2:.2f}%', flush=True)
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="QAM Calibration Sanity Check")
+    parser.add_argument("--backend", type=str, default="ibm_kingston")
+    parser.add_argument("--qubit", type=int, default=91, help="Physical qubit index for opt_level=0")
+    parser.add_argument("--shots", type=int, default=1024)
+    parser.add_argument("--local", action="store_true", help="Run on local StatevectorSampler (0 quota)")
+    args = parser.parse_args(argv)
 
-# --- TEST 3: Same U gate from loschmidt test ---
-print(f'\n{"="*50}', flush=True)
-print('TEST 3: U·U† (same loschmidt angles) → |0⟩', flush=True)
-np.random.seed(42)
-t = float(np.random.uniform(0, 2*np.pi))
-p = float(np.random.uniform(0, 2*np.pi))
-l = float(np.random.uniform(0, 2*np.pi))
-print(f'Angles: theta={t:.4f}, phi={p:.4f}, lam={l:.4f}', flush=True)
+    token = None if args.local else resolve_ibm_token()
+    is_local = args.local or not token
+    circuits = build_calibration_circuits()
+    names = list(circuits.keys())
+    qc_list = [circuits[k] for k in names]
 
-qc3 = QuantumCircuit(1)
-qc3.u(t, p, l, 0)
-qc3.barrier()
-qc3.u(t, p, l, 0).inverse()  # Echo
-qc3.barrier()
-qc3.measure_all()
-tqc3 = transpile(qc3, backend, optimization_level=0, seed_transpiler=42)
-try:
-    from qiskit.qasm2 import dumps
-    print(f'QASM2:\n{dumps(tqc3)}', flush=True)
-except:
-    pass
+    if is_local:
+        print("Running calibration sanity check on LOCAL StatevectorSampler (NOT hardware evidence)...")
+        sampler = StatevectorSampler(seed=42)
+        res = sampler.run(qc_list, shots=args.shots).result()
+        job_id = "local-calibration-42"
+        mode = "simulated"
+    else:
+        qam = QAM(backend=args.backend, local=False)
+        if qam.backend is None:
+            print("Backend unavailable; aborting hardware calibration.")
+            return 1
+        print(f"Running calibration sanity check on {args.backend} (physical qubit {args.qubit}, opt_level=0)...")
+        t_list = [
+            transpile(qc, qam.backend, optimization_level=0, seed_transpiler=42, initial_layout=[args.qubit])
+            for qc in qc_list
+        ]
+        res, job_id = _run_runtime_sampler(qam.backend, t_list, shots=args.shots)
+        mode = "quantum"
 
-job3 = sampler.run([tqc3], shots=1024)
-result3 = job3.result()
-counts3 = result3[0].data.meas.get_counts()
-print(f'\n✅ TEST 3 RESULT: {counts3}', flush=True)
-total3 = sum(counts3.values())
-p0_3 = counts3.get('0', 0) / total3 * 100
-print(f'   P(0) = {p0_3:.2f}%', flush=True)
+    report: dict[str, object] = {
+        "mode": mode,
+        "backend": "statevector_simulator" if is_local else args.backend,
+        "physical_qubit": None if is_local else args.qubit,
+        "job_id": job_id,
+        "tests": {},
+    }
 
-# --- TEST 4: Same U without echo (control for this U) ---
-print(f'\n{"="*50}', flush=True)
-print('TEST 4: U only (no echo) — expected P(0) = cos²(θ/2)', flush=True)
-qc4 = QuantumCircuit(1)
-qc4.u(t, p, l, 0)
-qc4.measure_all()
-tqc4 = transpile(qc4, backend, optimization_level=0, seed_transpiler=42)
-job4 = sampler.run([tqc4], shots=1024)
-result4 = job4.result()
-counts4 = result4[0].data.meas.get_counts()
-p0_4 = counts4.get('0', 0) / sum(counts4.values()) * 100
-print(f'✅ TEST 4 RESULT: {counts4}, P(0) = {p0_4:.2f}%', flush=True)
-expected = np.cos(t/2)**2 * 100
-print(f'   Expected P(0) = cos²(θ/2) = {expected:.2f}%', flush=True)
+    for idx, name in enumerate(names):
+        counts = QAM._extract_counts(res, pub_index=idx, qubits=1)
+        total = sum(counts.values())
+        zeros = counts.get("0", 0)
+        p0 = zeros / total if total > 0 else 0.0
+        ci_lo, ci_hi = wilson_ci(zeros, total)
+        report["tests"][name] = {
+            "p0": p0,
+            "wilson_95_ci": [ci_lo, ci_hi],
+            "counts": counts,
+        }
+        print(f"  {name:<14}: P(0) = {p0 * 100:6.2f}%  CI=[{ci_lo * 100:.2f}%, {ci_hi * 100:.2f}%]  counts={counts}")
 
-# --- SUMMARY ---
-print(f'\n{"="*50}', flush=True)
-print('ÖSSZEFOGLALÓ:', flush=True)
-print(f'  TEST 1 (RY·RY†=I):  P(0) = {p0_1:.2f}%  (expected ~98%)', flush=True)
-print(f'  TEST 2 (X·X=I):     P(0) = {p0_2:.2f}%  (expected ~99%)', flush=True)
-print(f'  TEST 3 (U·U†=I):    P(0) = {p0_3:.2f}%  (expected ~98%)', flush=True)
-print(f'  TEST 4 (U only):     P(0) = {p0_4:.2f}%  (expected {expected:.2f}%)', flush=True)
+    if not is_local:
+        out = Path(__file__).resolve().parent / "results" / "qam_calibration_latest.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        print(f"Saved hardware calibration record: {out}")
 
-results = {
-    'test1_ry_echo': {'p0': p0_1, 'counts': counts1, 'qasm_angles': 'RY(pi/2)->RY(-pi/2)', 'expected': '~98%'},
-    'test2_xx': {'p0': p0_2, 'counts': counts2, 'expected': '~99%'},
-    'test3_loschmidt': {'p0': p0_3, 'counts': counts3, 'angles': {'theta': t, 'phi': p, 'lam': l}, 'expected': '~98%'},
-    'test4_control': {'p0': p0_4, 'counts': counts4, 'expected': f'{expected:.2f}%'},
-}
-with open('results/qam_calibration_test.json', 'w', encoding='utf-8') as f:
-    json.dump(results, f, indent=2, default=str, ensure_ascii=False)
-print(f'\n✅ Mentve: results/qam_calibration_test.json', flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

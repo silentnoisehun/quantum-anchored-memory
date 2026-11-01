@@ -1,16 +1,19 @@
-FROM python:3.10-slim as python
+FROM python:3.12-slim
 
-RUN pip install qiskit qiskit-ibm-runtime numpy matplotlib
+RUN apt-get update && apt-get install -y --no-install-recommends curl build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y curl
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
-WORKDIR /app/rust
-RUN cargo build --release
+RUN cargo build --release --manifest-path rust/Cargo.toml
 
-WORKDIR /app
-CMD ["python3", "qam_benchmark.py", "--token", "${IBM_QUANTUM_TOKEN}", "--backend", "ibm_heron"]
+# Reads IBM_QUANTUM_TOKEN from container environment if set, otherwise runs
+# zero-quota local StatevectorSampler verification.
+CMD ["python3", "-m", "src.qam_benchmark", "--backend", "ibm_kingston"]
