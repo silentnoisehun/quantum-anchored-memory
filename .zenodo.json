@@ -1,0 +1,19 @@
+{
+  "title": "Quantum Anchored Memory (QAM): Loschmidt Echo State Verification on Superconducting QPUs",
+  "version": "0.2.0",
+  "upload_type": "software",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Máté, Róbert",
+      "affiliation": "Hope Ecosystem / Independent Researcher",
+      "orcid": "0009-0003-3986-6039"
+    }
+  ],
+  "keywords": [
+    "quantum computing",
+    "Loschmidt echo",
+    "IBM Heron",
+    "hierarchical memory"
+  ]
+}

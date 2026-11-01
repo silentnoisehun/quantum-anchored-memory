@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software or hardware measurement dataset, please cite it using the metadata below."
+title: "Quantum Anchored Memory (QAM): Loschmidt Echo State Verification on Superconducting QPUs"
+version: 0.2.0
+date-released: "2026-11-01"
+license: MIT
+repository-code: "https://github.com/silentnoisehun/quantum-anchored-memory"
+authors:
+  - family-names: "Máté"
+    given-names: "Róbert"
+    orcid: "https://orcid.org/0009-0003-3986-6039"
+    affiliation: "Hope Ecosystem / Independent Researcher"
+keywords:
+  - quantum computing
+  - Loschmidt echo
+  - superconducting qubits
+  - IBM Heron
+  - hierarchical memory

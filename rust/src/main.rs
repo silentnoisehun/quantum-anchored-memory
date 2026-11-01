@@ -1,45 +1,41 @@
-// QAM Rust Implementáció – Microscope-Memory integráció
-use serde::{Serialize, Deserialize};
-
-#[derive(Serialize, Deserialize, Debug)]
-struct QAMResult {
-    qubits: usize,
-    time_us: f64,
-    success_rate: f64,
-    entropy: f64,
-}
-
-impl QAMResult {
-    fn to_json(&self) -> String {
-        serde_json::to_string_pretty(self).unwrap_or_default()
-    }
-}
+use qam::{SyncAudit, WavePacket, ZoomEntry};
+use std::collections::BTreeMap;
 
 fn main() {
-    println!("🚀 QAM Rust Implementáció – Microscope-Memory integráció");
-    println!("🌊 SYnc művelet: ψ(t) + Echo → 0 → ψ'(t)");
-    println!();
+    println!("QAM Rust Core v0.2.0 — Classical Bridge & Hardware Audit");
+    println!("========================================================");
 
-    // Szimulált SYnc művelet
-    let result = QAMResult {
-        qubits: 5,
-        time_us: 8.4,
-        success_rate: 0.9998,
-        entropy: 0.0003,
+    // 1. WavePacket encode/decode roundtrip (CLASSICAL verification)
+    let wp = WavePacket {
+        amplitude: 1.0,
+        gamma: 0.1,
+        frequency: 0.25,
+        phase: 0.5,
     };
+    let probs = wp.encode_probabilities();
+    let decoded = WavePacket::decode_probabilities(probs, wp.gamma);
+    println!(
+        "[CLASSICAL] WavePacket roundtrip: A={:.4}-> {:.4}, f={:.4}-> {:.4}, phi={:.4}-> {:.4}",
+        wp.amplitude, decoded.amplitude, wp.frequency, decoded.frequency, wp.phase, decoded.phase
+    );
 
-    println!("📊 SYnc eredmény:");
-    println!("{}", result.to_json());
+    // 2. D0..D8 hierarchical zoom store + Merkle integrity check
+    let entry = ZoomEntry::new("qam_demo", "Quantum Anchored Memory D0-D8 Hierarchy");
+    println!(
+        "[CLASSICAL] D0..D8 Merkle root={} verified={}",
+        entry.merkle_root,
+        entry.verify_integrity()
+    );
 
-    // Koherencia teszt
-    let coherence: f64 = 0.9999;
-    println!();
-    println!("📊 Koherencia: {:.4}%", coherence * 100.0);
+    // 3. Recompute audit statistics for measured ibm_kingston Job db7viu8r1c5c738ldhi0 (q91)
+    let mut counts = BTreeMap::new();
+    counts.insert("0".to_string(), 1018);
+    counts.insert("1".to_string(), 6);
+    let audit = SyncAudit::from_counts("db7viu8r1c5c738ldhi0", "ibm_kingston", 91, 1, &counts);
 
-    // Microscope-memory D0-D8 referencia
-    println!();
-    println!("🧠 Microscope-Memory integráció (D0-D8): ✅ OK");
-    println!("⚡ Wave-Quantum kódolás (Pearson > 0.99): ✅ OK");
-    println!();
-    println!("✅ QAM futtatva – koherens kvantumállapotok memóriaként.");
+    println!("\n[HARDWARE RECORD RECOMPUTED]");
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&audit).unwrap_or_default()
+    );
 }
