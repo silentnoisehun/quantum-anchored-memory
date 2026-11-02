@@ -1,6 +1,6 @@
 {
   "title": "Quantum Anchored Memory (QAM): Loschmidt Echo State Verification on Superconducting QPUs",
-  "version": "0.2.0",
+  "version": "1.0.1",
   "upload_type": "software",
   "license": "MIT",
   "creators": [
@@ -15,5 +15,6 @@
     "Loschmidt echo",
     "IBM Heron",
     "hierarchical memory"
-  ]
+  ],
+  "publication_date": "2026-11-02"
 }
