@@ -1,0 +1,105 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=2.0cm}
+
+\title{\textbf{Silent Physical Qubit Fallback and Gate-Fidelity Collapse Under \texttt{optimization\_level=0} on IBM Heron Processors: A Technical Diagnostic}}
+
+\author{
+  \textbf{M\'at\'e R\'obert}\thanks{Corresponding author: \texttt{silentnoisehun@gmail.com}}\\
+  \textit{Independent Quantum Researcher, Silent Coder Lab}\\
+  \textit{Budapest, Hungary}
+}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+When benchmarking low-level quantum circuits on cloud superconducting processors, researchers routinely disable compiler heuristics via Qiskit's \texttt{optimization\_level=0} to prevent gate cancellations and evaluate raw physical operations. In this technical note, we report an undocumented calibration metadata trap on 156-qubit IBM Heron architectures (\texttt{ibm\_kingston}, \texttt{ibm\_marrakesh}): legacy calls to \texttt{backend.properties()} return $-1$ across physical qubit indices. Consequently, transpiling without an explicit \texttt{initial\_layout} silently falls back to physical qubit 0, which typically exhibits elevated error rates or degraded calibration. On \texttt{ibm\_kingston}, executing an identity identity benchmark ($X \cdot X = I$) under default \texttt{opt\_level=0} yielded an apparent fidelity of only $49.32\%$ ($1024$ shots, Job \texttt{db7v9tor1c5c738lf1gg}), indistinguishable from maximal dephasing. In contrast, dynamically identifying calibrated qubits via an auxiliary high-optimization query (\texttt{opt\_level=3}) and forcing physical qubit 91 via \texttt{initial\_layout=[91]} restored the benchmark fidelity to $99.32\%$ ($1017/1024$ counts) and Loschmidt echo recovery ($U \cdot U^{\dagger}$) to $99.41\%$. We provide diagnostic code patterns and recommend standard precautions for researchers conducting gate-level quantum hardware benchmarks.
+\end{abstract}
+
+\section{Introduction}
+
+Benchmarking unitary fidelity on superconducting transmon processors requires careful isolation of hardware noise from compiler optimizations. In the Qiskit software development kit (SDK), disabling synthesis passes is traditionally achieved by setting \texttt{optimization\_level=0} in the \texttt{transpile()} function. This ensures that gate sequences (such as echo pulses, randomized benchmarking sequences, or dynamical state inversion $U \cdot U^{\dagger}$) are preserved verbatim without algebraic reduction.
+
+However, compilation passes perform two distinct tasks: (1) algorithmic gate reduction, and (2) physical qubit routing/layout selection. In this note, we document an empirical pitfall where disabling gate reduction on IBM Heron processors inadvertently deactivates intelligent qubit selection, inducing a severe fidelity collapse.
+
+\section{The Heron Metadata Anomaly}
+
+On IBM's 156-qubit Heron r2 and r3 processors, the legacy \texttt{backend.properties()} API returns sentinel values ($-1$) for physical qubit readout and gate error metrics. When a user submits an unconstrained compilation job:
+
+\begin{verbatim}
+qc_transpiled = transpile(
+    qc_raw, 
+    backend=backend, 
+    optimization_level=0
+)
+\end{verbatim}
+
+The transpiler's layout pass finds no valid qubit quality ranking in the property cache. Rather than raising a warning or querying modern backend target metrics, the compiler silently falls back to a trivial identity permutation, mapping virtual qubit $q_0$ directly to physical qubit index 0.
+
+\section{Hardware Measurements on \texttt{ibm\_kingston}}
+
+To isolate the source of error, we evaluated two distinct circuits on the 156-qubit Heron processor \texttt{ibm\_kingston} (1024 shots per trial):
+\begin{enumerate}
+  \item \textbf{Identity Calibration Test:} Two consecutive NOT gates ($X \cdot X = I$) executed on initial state $|0\rangle$, where ideal outcome probability is $P(|0\rangle) = 1.0$.
+  \item \textbf{Unitary Loschmidt Inversion ($U \cdot U^{\dagger}$):} A 10-gate sequence composed of 6 virtual $\text{RZ}$ and 4 physical $\text{SX}$ gates reversing an arbitrary state rotation back to $|0\rangle$.
+\end{enumerate}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Circuit Benchmark} & \textbf{Layout Mode} & \textbf{Target QPU} & \textbf{$P(|0\rangle)$} & \textbf{Job ID} \\
+\midrule
+$X \cdot X = I$ (Aer Sim) & Default & Simulator & $100.00\%$ & \texttt{offline} \\
+$X \cdot X = I$ (Hardware) & Auto (Qubit 0) & \texttt{ibm\_kingston} & \textbf{49.32\%} & \texttt{db7v9tor1c5c...} \\
+$X \cdot X = I$ (Hardware) & Forced Qubit 91 & \texttt{ibm\_kingston} & \textbf{99.32\%} & \texttt{db7v9wfi99s7...} \\
+\midrule
+$U$ Control (Hardware) & Forced Qubit 91 & \texttt{ibm\_kingston} & $15.33\%$ & \texttt{db7tvaor1c5c...} \\
+$U \cdot U^{\dagger}$ Inversion & Auto (Qubit 0) & \texttt{ibm\_kingston} & \textbf{45.31\%} & \texttt{db7talor1c5c...} \\
+$U \cdot U^{\dagger}$ Inversion & Forced Qubit 91 & \texttt{ibm\_kingston} & \textbf{99.41\%} & \texttt{db7tc8or1c5c...} \\
+\bottomrule
+\end{tabular}
+\caption{Measured state survival on \texttt{ibm\_kingston} demonstrating the dramatic fidelity drop caused by unguided qubit 0 allocation under \texttt{optimization\_level=0}.}
+\label{tab:heron_benchmarks}
+\end{table}
+
+As summarized in Table~\ref{tab:heron_benchmarks}, executing on automatically allocated physical qubit 0 resulted in $P(|0\rangle) = 49.32\%$, perfectly mimicking a fully decohered state (a random coin toss). In contrast, executing the exact same gate sequence on calibrated physical qubit 91 yielded $P(|0\rangle) = 99.32\%$, representing a greater than $2\times$ reduction in measured error.
+
+Furthermore, in the 10-gate unitary inversion sequence ($U \cdot U^{\dagger}$), unguided compilation resulted in $45.31\%$, whereas explicit layout pin to qubit 91 restored state fidelity to \textbf{99.41\%} ($1018$ of $1024$ shots in state $|0\rangle$), achieving a \textbf{6.48$\times$ fidelity improvement} over the control baseline ($15.33\%$).
+
+\section{Diagnostic and Remediation Protocol}
+
+To avoid this pitfall while strictly preserving gate sequences, we recommend a two-pass compilation workflow. In Phase 1, an auxiliary compilation at \texttt{optimization\_level=3} queries the backend's active coupling map and target constraints to extract an optimal physical layout. In Phase 2, the extracted layout is explicitly injected into the unoptimized transpilation:
+
+\begin{verbatim}
+# Phase 1: Query optimal layout from compiler
+aux = transpile(qc, backend=backend, 
+                optimization_level=3)
+optimal_layout = aux.layout.initial_layout
+
+# Phase 2: Transpile with zero gate cancellation
+qc_bench = transpile(
+    qc, 
+    backend=backend, 
+    optimization_level=0, 
+    initial_layout=optimal_layout
+)
+\end{verbatim}
+
+\section{Conclusion}
+
+Disabling compiler optimizations is necessary for hardware characterization, but on commercial architectures with fragmented or evolving calibration metadata, \texttt{optimization\_level=0} can inadvertently deactivate essential layout routing. Researchers observing anomalously low fidelities ($\sim 50\%$) on superconducting processors should inspect physical qubit assignments before attributing losses to intrinsic dephasing.
+
+\section*{Data Availability}
+Job logs and verification scripts are available at: \url{https://github.com/silentnoisehun/quantum-anchored-memory}.
+
+\end{document}

@@ -1,3 +1,10 @@
+# Quantum Anchored Memory: IBM Heron Calibration & Layout Benchmarks
+
+> ### 📄 Technical Report / Pre-print Available
+> - **LaTeX Technical Note:** [rxiv/heron_layout_trap.tex](arxiv/heron_layout_trap.tex)
+> - **Title:** *Silent Physical Qubit Fallback and Gate-Fidelity Collapse Under optimization_level=0 on IBM Heron Processors: A Technical Diagnostic*
+> - **Key Finding:** On 156-qubit IBM Heron QPUs (ibm_kingston), legacy ackend.properties() returns -1, causing 	ranspile(..., optimization_level=0) without explicit initial_layout to default to physical qubit 0 (yielding ~49.3% fidelity). Guiding layout to calibrated qubits restores **99.41%** unitary inversion fidelity ( \cdot U^\dagger$) on hardware.
+
 # Quantum Anchored Memory (QAM)
 
 > **🔬 Researcher Note & Evidence Summary**
